@@ -37,7 +37,19 @@ func (jr *JsonResponse) Body() interface{} {
 }
 
 func (jr *JsonResponse) Headers() map[string]string {
-	return jr.Headers_
+	headers := jr.Headers_
+	// Initialize headers if they are nil
+	if headers == nil {
+		headers = make(map[string]string)
+		headers["Content-Type"] = "application/json"
+	} else {
+		// Set default headers for JsonResponse
+		if _, ok := headers["Content-Type"]; !ok {
+			headers["Content-Type"] = "application/json"
+		}
+ 	}
+
+	return headers
 }
 
 func (jr *JsonResponse) Message() string {
@@ -52,14 +64,14 @@ type JsonResponseBaseJSON struct {
 
 type BaseController struct {
 	SG *serverGlobals.ServerGlobals
+	RW http.ResponseWriter
+	R *http.Request
 }
 
-func (bc *BaseController) WriteResponse(w http.ResponseWriter, response Response) {
-	// Setting response Content-Type to `application/json` - default for JSON response
-	w.Header().Set("Content-Type", "application/json")
+func (bc *BaseController) WriteResponse(response Response) {
 	// Adding customer/additional Headers to response
 	for key, value := range response.Headers() {
-		w.Header().Set(key, value)
+		bc.RW.Header().Set(key, value)
 	}
 
 	switch {
@@ -76,14 +88,14 @@ func (bc *BaseController) WriteResponse(w http.ResponseWriter, response Response
 		jsonString, err := json.Marshal(jsbJSON)
 		if err != nil {
 			log.Println("can't encode response")
-			w.WriteHeader(500)
+			bc.RW.WriteHeader(500)
 			return
 		}
 
 		// Writing Headers back to client
-		w.WriteHeader(response.Status())
+		bc.RW.WriteHeader(response.Status())
 		// Writing body back to client
-		if _, err := io.WriteString(w, string(jsonString)); err != nil {
+		if _, err := io.WriteString(bc.RW, string(jsonString)); err != nil {
 			panic("can't write response back to client")
 		}
 	case response.Status() >= 200 && response.Status() < 300:
@@ -91,12 +103,12 @@ func (bc *BaseController) WriteResponse(w http.ResponseWriter, response Response
 		jsonString, err := json.Marshal(jsbJSON)
 		if err != nil {
 			log.Println("can't encode response")
-			w.WriteHeader(500)
+			bc.RW.WriteHeader(500)
 			return
 		}
 
-		w.WriteHeader(response.Status())
-		if _, err := io.WriteString(w, string(jsonString)); err != nil {
+		bc.RW.WriteHeader(response.Status())
+		if _, err := io.WriteString(bc.RW, string(jsonString)); err != nil {
 			panic("can't write response back to client")
 		}
 	}

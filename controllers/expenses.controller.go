@@ -19,19 +19,22 @@ type ExpensesController struct {
 }
 
 func (c ExpensesController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.RW = w
+	c.R = r
+
 	switch {
 	case r.Method == http.MethodGet && r.RequestURI == "/expenses/list":
-		c.WriteResponse(w,  c.list(w, r))
+		c.WriteResponse(c.list())
 
 	case r.Method == http.MethodPost && r.RequestURI == "/expenses/add":
-		c.WriteResponse(w, c.add(w, r))
+		c.WriteResponse(c.add())
 	default:
-		c.WriteResponse(w, &JsonResponse{StatusCode_: 404})
+		c.WriteResponse(&JsonResponse{StatusCode_: 404})
 	}
 }
 
-func (c *ExpensesController) add(w http.ResponseWriter, r *http.Request) Response {
-	authToken := r.Header.Get("Authorization")
+func (c *ExpensesController) add() Response {
+	authToken := c.R.Header.Get("Authorization")
 	if authToken == "" {
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("authentication token empty")}
 	}
@@ -49,7 +52,7 @@ func (c *ExpensesController) add(w http.ResponseWriter, r *http.Request) Respons
 
 	// Parsing incoming payload
 	var ds AddExpenseDS
-	if err := json.NewDecoder(r.Body).Decode(&ds); err != nil {
+	if err := json.NewDecoder(c.R.Body).Decode(&ds); err != nil {
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("can't json decode incoming payload")}
 	}
 
@@ -60,9 +63,9 @@ func (c *ExpensesController) add(w http.ResponseWriter, r *http.Request) Respons
 	return &JsonResponse{StatusCode_: http.StatusCreated, Message_: "expenses added", Body_: expense}
 }
 
-func (c *ExpensesController) list(w http.ResponseWriter, r *http.Request) Response  {
+func (c *ExpensesController) list() Response  {
 	// Getting Authorization token from Headers
-	authToken := r.Header.Get("Authorization")
+	authToken := c.R.Header.Get("Authorization")
 	if authToken == "" {
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("authentication token empty")}
 	}

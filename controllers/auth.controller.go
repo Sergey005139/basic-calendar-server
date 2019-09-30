@@ -11,6 +11,7 @@ import (
 
 type AuthController struct {
 	BaseController
+	counter int
 }
 
 type SignupDS struct {
@@ -24,23 +25,24 @@ type SigninDS struct {
 }
 
 func (c AuthController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	c.RW = w
+	c.R = r
+
 	switch {
 	case r.Method == http.MethodPost && r.RequestURI == "/auth/signup":
-		c.WriteResponse(w, c.signup(w, r))
+		c.WriteResponse(c.signup())
 	case r.Method == http.MethodPost && r.RequestURI == "/auth/signin":
-		response := c.signin(w, r)
-		log.Println("response", response)
-		c.WriteResponse(w, response)
+		c.WriteResponse(c.signin())
 	default:
-		c.WriteResponse(w, &JsonResponse{StatusCode_: 404, Message_: "not found"})
+		c.WriteResponse(&JsonResponse{StatusCode_: 404, Message_: "not found"})
 	}
 }
 
 // Responses:
 // - 400 - Login or password incorrect
-func (c *AuthController) signin(w http.ResponseWriter, r *http.Request) Response {
+func (c *AuthController) signin() Response {
 	var ds SignupDS
-	if err := json.NewDecoder(r.Body).Decode(&ds); err != nil {
+	if err := json.NewDecoder(c.R.Body).Decode(&ds); err != nil {
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("can't json decode incoming payload")}
 	}
 
@@ -57,9 +59,9 @@ func (c *AuthController) signin(w http.ResponseWriter, r *http.Request) Response
 	}
 }
 
-func (c *AuthController) signup(w http.ResponseWriter, r *http.Request) Response {
+func (c *AuthController) signup() Response {
 	var ds SignupDS
-	if err := json.NewDecoder(r.Body).Decode(&ds); err != nil {
+	if err := json.NewDecoder(c.R.Body).Decode(&ds); err != nil {
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("can't json decode incoming request")}
 	}
 
