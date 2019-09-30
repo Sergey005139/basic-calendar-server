@@ -3,9 +3,16 @@ package controllers
 import (
 	"../data"
 	"../utils"
+	"encoding/json"
 	"errors"
 	"net/http"
 )
+
+type AddExpenseDS struct {
+	Date string
+	Category string
+	Amount float64
+}
 
 type ExpensesController struct {
 	BaseController
@@ -40,7 +47,14 @@ func (c *ExpensesController) add(w http.ResponseWriter, r *http.Request) Respons
 		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("invalid authentication token")}
 	}
 
-	expense := data.Expense{Date:"09-29-2019", Category:"Car", Amount:10.50}
+	// Parsing incoming payload
+	var ds AddExpenseDS
+	if err := json.NewDecoder(r.Body).Decode(&ds); err != nil {
+		return &JsonResponse{StatusCode_: http.StatusBadRequest, Err_: errors.New("can't json decode incoming payload")}
+	}
+
+	// Adding expense
+	expense := data.Expense{Date: ds.Date, Category: ds.Category, Amount: ds.Amount}
 	u.AddExpense(expense)
 
 	return &JsonResponse{StatusCode_: http.StatusCreated, Message_: "expenses added", Body_: expense}
