@@ -12,7 +12,9 @@ import (
 
 func main() {
 	sg := serverGlobals.ServerGlobals{UserStorage: data.UserStorage{}}
+	baseController := controllers.BaseController{SG: &sg}
 
-	http.Handle("/auth/", controllers.AuthController{SG: &sg})
+	http.Handle("/auth/", controllers.AuthController{BaseController: baseController})
+	http.Handle("/expenses/", controllers.ExpensesController{BaseController: baseController})
 	log.Fatal(http.ListenAndServe(":8080", nil))
 }

@@ -7,18 +7,18 @@ type UserStorage struct {
 }
 
 func (us *UserStorage) FindByUsername(v string) *User {
-	for _, r := range us.users {
+	for i, r := range us.users {
 		if r.Username == v {
-			return &r
+			return &(us.users[i])
 		}
 	}
 	return nil
 }
 
 func (us *UserStorage) FindByUUID(v string) *User {
-	for _, r := range us.users {
+	for i, r := range us.users {
 		if r.UUID == v {
-			return &r
+			return &(us.users[i])
 		}
 	}
 	return nil
@@ -40,13 +40,18 @@ func (us *UserStorage) Insert(u *User) (bool, error) {
 }
 
 type User struct {
-	UUID string
-	Username string
-	Password string
+	UUID string `json:"-"`
+	Username string `json:"username"`
+	Password string `json:"-"`
+	Expenses []Expense `json:"-"`
+}
+
+func (u *User) AddExpense(e Expense) {
+	u.Expenses = append(u.Expenses, e)
 }
 
 type Expense struct {
-	Date string
-	Category string
-	Amount float64
+	Date string `json:"date"`
+	Category string `json:"category"`
+	Amount float64 `json:"amount"`
 }
