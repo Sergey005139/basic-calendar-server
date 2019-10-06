@@ -19,8 +19,7 @@ type ExpensesController struct {
 }
 
 func (c ExpensesController) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	c.RW = w
-	c.R = r
+	c.RW, c.R = w, r
 
 	switch {
 	case r.Method == http.MethodGet && r.RequestURI == "/expenses/list":

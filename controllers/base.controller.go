@@ -69,6 +69,7 @@ type BaseController struct {
 }
 
 func (bc *BaseController) WriteResponse(response Response) {
+	bc.RW.Header().Set("Access-Control-Allow-Origin", "*")
 	// Adding customer/additional Headers to response
 	for key, value := range response.Headers() {
 		bc.RW.Header().Set(key, value)
